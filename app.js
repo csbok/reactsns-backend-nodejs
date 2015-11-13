@@ -54,7 +54,7 @@ app.post('/login', function(req, res) {
 				return;
 			}
 
-			req.session.user_no = rows[0];
+			req.session.user_no = rows[0].user_no;
 			res.send({result: true});
 		});
 	});
@@ -109,9 +109,8 @@ app.post('/join', function(req, res) {
 					return;
 				}
 
-				conn.query('insert into user (user_name, password, mail) values (?,?,?)',[id, pw, mail], function(err) {
+				conn.query('INSERT INTO user (user_name, password, mail) VALUES (?,?,?)',[id, pw, mail], function(err) {
 					if (err) console.error('err : ' + err);
-					console.log('rows : ' + JSON.stringify(rows));
 					conn.release();
 
 					res.send({result:true});
@@ -128,7 +127,7 @@ app.get('/new', function(req,res) {
 	pool.getConnection(function (err, conn) {
 		if (err) console.error('err : ' + err);
 
-		conn.query('select article_no, content, article.user_no, (select count(1) from good where good_article_no=article_no) as good_count, user_name as author from article, user where article.user_no = user.user_no', function(err, rows) {
+		conn.query('select article_no, content, article.user_no, (select count(1) from good where good_article_no=article_no) as good_count, user_name as author from article, user where article.user_no = user.user_no ORDER BY article_no DESC', function(err, rows) {
 			if (err) console.error('err : ' + err);
 			console.log('rows : ' + JSON.stringify(rows));
 
@@ -143,6 +142,110 @@ app.get('/new', function(req,res) {
 
 
 //---------------------------------------------------------------------------------------------------------------------
+app.get('/good/:article_no', function(req,res) {
+	var user_no = req.session.user_no;
+	var article_no = req.params.article_no;
+
+	if (!user_no || !article_no) {
+		res.send({result:false});
+		return;
+	}
+	console.log(user_no, " / ",article_no);
+
+	pool.getConnection(function (err, conn) {
+		if (err) console.error('err : ' + err);
+
+		conn.query('select * from good where good_article_no = ? and good_user_no = ?',[article_no, user_no], function(err, rows) {
+			if (err) console.error('err : ' + err);
+
+			console.log("length", rows.length);
+			if (rows.length > 0) {
+				conn.query('delete from good where good_article_no = ? and good_user_no = ?',[article_no, user_no], function(err) {
+					conn.release();
+					res.send({result:true, article:article_no, good: false})
+				});
+				return;
+			}
+
+			conn.query('INSERT INTO good (good_article_no, good_user_no) VALUES (?,?)',[article_no, user_no], function(err) {
+				if (err) console.error('err : ' + err);
+				conn.release();
+				res.send({result:true, article:article_no, good: true})
+			});
+		});
+	});
+});
+
+
+
+//---------------------------------------------------------------------------------------------------------------------
+app.get('/comment/:article_no', function(req, res) {
+	var article_no = req.params.article_no;
+
+	pool.getConnection(function (err, conn) {
+		if (err) console.error('err : ' + err);
+
+		conn.query('select comment_no, comment, user_name from comment, user where article_no = ?', article_no, function(err, rows) {
+			if (err) console.error('err : ' + err);
+			console.log('rows : ' + JSON.stringify(rows));
+
+			conn.release();
+
+			res.send(rows);
+		});
+
+	});
+});
+
+
+
+//---------------------------------------------------------------------------------------------------------------------
+app.post('/comment/:article_no', function(req,res) {
+	var user_no = req.session.user_no;
+	var article_no = req.params.article_no;
+	var comment = req.param('comment');
+
+	pool.getConnection(function (err, conn) {
+		if (err) console.error('err : ' + err);
+
+		conn.query('INSERT INTO comment (article_no, comment, user_no) VALUES (?,?,?)', [article_no, comment, user_no], function(err) {
+			if (err) console.error('err : ' + err);
+
+			conn.release();
+
+			res.send({result:true});
+		});
+
+	});
+
+});
+
+
+
+//---------------------------------------------------------------------------------------------------------------------
+app.post('/write', function(req,res) {
+	var user_no = req.session.user_no;
+	var content = req.param('content');
+
+	pool.getConnection(function (err, connection) {
+		if (err) console.error('err : ' + err);
+
+		// Use the connection
+		connection.query('INSERT INTO article (content, user_no) VALUES (?,?)', [content, user_no],function (err) {
+			if (err) console.error('err : ' + err);
+
+	//			res.render('index', {title: 'test', rows: rows});
+			connection.release();
+
+			res.send({result:true});
+
+			// Don't use the connection here, it has been returned to the pool.
+		});
+	});
+
+});
+
+//---------------------------------------------------------------------------------------------------------------------
 app.post('/timeline', function(req, res) {
 	var myid = req.param('myid');
 
@@ -152,7 +255,7 @@ app.post('/timeline', function(req, res) {
 		if (err) console.error('err : ' + err);
 
 		// Use the connection
-		connection.query('SELECT *,(SELECT COUNT(1) from good where good_article_no=article_no) as good,(select count(1) from follow where lover_user_no=? and leader_user_no=user_no) as follow from article', 'curtis',function (err, rows) {
+		connection.query('SELECT *,(SELECT COUNT(1) FROM good WHERE good_article_no=article_no) as good,(select count(1) from follow where lover_user_no=? and leader_user_no=user_no) as follow from article', 'curtis',function (err, rows) {
 			if (err) console.error('err : ' + err);
 			console.log('rows : ' + JSON.stringify(rows));
 
@@ -169,6 +272,42 @@ app.post('/timeline', function(req, res) {
 
 
 
+//---------------------------------------------------------------------------------------------------------------------
+app.get('/follow/:leader_no', function(req, res) {
+	var leader_no = req.params.leader_no;
+	var user_no = req.session.user_no;
+
+	if (!user_no) {
+		res.send({result: false});
+		return;
+	}
+
+	pool.getConnection(function (err, connection) {
+		if (err) console.error('err : ' + err);
+
+		// Use the connection
+		connection.query('SELECT * FROM follow WHERE leader_user_no = ? and lover_user_no = ?', [leader_no, user_no] ,function (err, rows) {
+			if (err) console.error('err : ' + err);
+
+			if (rows.length > 0) {
+				connection.query('DELETE FROM follow WHERE leader_user_no = ? and lover_user_no = ?', [leader_no, user_no] ,function (err) {
+					if (err) console.error('err : ' + err);
+					connection.release();
+					res.send({result:true, leader_no:leader_no, follow:false});
+
+				});
+				return;
+			}
+
+			connection.query('INSERT INTO follow (leader_user_no, lover_user_no) VALUES (?,?)', [leader_no, user_no], function(err) {
+				if (err) console.error('err : ' + err);
+				connection.release();
+				res.send({result:true, leader_no:leader_no, follow:true});
+			});
+		});
+	});
+
+});
 //---------------------------------------------------------------------------------------------------------------------
 var server = app.listen(8088, function () {
 	var host = server.address().address;
