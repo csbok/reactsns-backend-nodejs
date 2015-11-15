@@ -35,6 +35,31 @@ app.use(expressValidator());
 
 
 //---------------------------------------------------------------------------------------------------------------------
+app.get('/info/:user_no', function(req,res) {
+	var user_no = req.params.user_no;
+
+	pool.getConnection(function (err, conn) {
+		if (err) {console.error('err : ' + err);}
+
+		conn.query('select user_no, user_name,'+
+			' (select count(1) from article where user_no=user.user_no) as article_count,'+
+			' (select count(1) from comment where user_no=user.user_no) as comment_count,'+
+			' (select count(1) from follow where lover_user_no=user_no) as following_count,'+
+			' (select count(1) from follow where leader_user_no=user_no) as follower_count'+
+		 ' from user where user_no = ? limit 1',user_no, function(err, rows) {
+			if (err) console.error('err : ' + err);
+			console.log('rows : ' + JSON.stringify(rows));
+
+			conn.release();
+			res.send(rows[0]);
+		});
+	});
+
+});
+
+
+
+//---------------------------------------------------------------------------------------------------------------------
 app.post('/login', function(req, res) {
 	var id = req.param('id');
 	var pw = req.param('pw');
@@ -55,9 +80,17 @@ app.post('/login', function(req, res) {
 			}
 
 			req.session.user_no = rows[0].user_no;
-			res.send({result: true});
+			res.send({result: true, user_no: rows[0].user_no});
 		});
 	});
+});
+
+
+
+//---------------------------------------------------------------------------------------------------------------------
+app.get('/logout', function(req, res) {
+	req.session.user_no = null;
+	res.send({result:true});
 });
 
 
@@ -124,18 +157,31 @@ app.post('/join', function(req, res) {
 
 //---------------------------------------------------------------------------------------------------------------------
 app.get('/new', function(req,res) {
+	var user_no = req.session.user_no;
+
+	console.log("user_no", user_no);
 	pool.getConnection(function (err, conn) {
 		if (err) console.error('err : ' + err);
 
-		conn.query('select article_no, content, article.user_no, (select count(1) from good where good_article_no=article_no) as good_count, user_name as author from article, user where article.user_no = user.user_no ORDER BY article_no DESC', function(err, rows) {
-			if (err) console.error('err : ' + err);
-			console.log('rows : ' + JSON.stringify(rows));
+		if (user_no) {
+			conn.query('select article_no, content, article.user_no, (select count(1) from follow where leader_user_no=user.user_no and lover_user_no=?) as follow_already, (select count(1) from good where good_article_no = article_no and good_user_no = ?) as good_already, (select count(1) from good where good_article_no=article_no) as good_count, user_name as author from article, user where article.user_no = user.user_no ORDER BY article_no DESC', [user_no, user_no], function(err, rows) {
+				if (err) console.error('err : ' + err);
+				console.log('rows : ' + JSON.stringify(rows));
 
-			conn.release();
+				conn.release();
 
-			res.send(rows);
-		});
+				res.send(rows);
+			});
+		} else {
+			conn.query('select article_no, content, article.user_no, (select count(1) from good where good_article_no=article_no) as good_count, user_name as author from article, user where article.user_no = user.user_no ORDER BY article_no DESC', function(err, rows) {
+				if (err) console.error('err : ' + err);
+				console.log('rows : ' + JSON.stringify(rows));
 
+				conn.release();
+
+				res.send(rows);
+			});
+		}
 	});
 });
 
@@ -268,6 +314,44 @@ app.post('/timeline', function(req, res) {
 		});
 	});
 
+});
+
+
+
+//---------------------------------------------------------------------------------------------------------------------
+app.get('/following/:user_no', function(req,res) {
+	var user_no = req.params.user_no;
+
+	pool.getConnection(function (err, conn) {
+		if (err) console.error('err : ' + err);
+
+		conn.query('select user_no, user_name from user, follow where user.user_no = follow.leader_user_no and follow.lover_user_no=?', user_no, function(err,rows) {
+			if (err) console.error('err : ' + err);
+
+			conn.release();
+
+			res.send(rows);
+		});
+	});
+});
+
+
+
+//---------------------------------------------------------------------------------------------------------------------
+app.get('/follower/:user_no', function(req,res) {
+	var user_no = req.params.user_no;
+
+	pool.getConnection(function (err, conn) {
+		if (err) console.error('err : ' + err);
+
+		conn.query('select user_no, user_name from user, follow where user.user_no = follow.lover_user_no and follow.leader_user_no=?', user_no, function(err,rows) {
+			if (err) console.error('err : ' + err);
+
+			conn.release();
+
+			res.send(rows);
+		});
+	});
 });
 
 
