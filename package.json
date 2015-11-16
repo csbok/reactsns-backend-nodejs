@@ -9,7 +9,9 @@
     "express": "^4.13.3",
     "express-session": "^1.12.1",
     "express-validator": "^2.18.0",
-    "mysql": "^2.9.0"
+    "mysql": "^2.9.0",
+    "passport": "^0.3.2",
+    "passport-facebook": "^2.0.0"
   },
   "devDependencies": {},
   "scripts": {

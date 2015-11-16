@@ -3,18 +3,15 @@ var session = require('express-session');
 var mysql	= require('mysql');
 var expressValidator = require('express-validator');
 var bodyParser = require('body-parser');
+var passport = require('passport')
+  , FacebookStrategy = require('passport-facebook').Strategy;
 //---------------------------------------------------------------------------------------------------------------------
 /*eslint-disable no-console */
 
+var mysqlConfig = require('./config/mysql');
 
 var app = express();
-var pool = mysql.createPool({
-	connectionLimit: 3,
-	host: 'jw0ch9vofhcajqg7.cbetxkdyhwsb.us-east-1.rds.amazonaws.com',
-	database: 'u9vx1bpj09dlbw13',
-	user: 'qex9jk0xto6c6tjg',
-	password: 'dmzyqnnuqzdrumwl'
-});
+var pool = mysql.createPool(mysqlConfig);
 //---------------------------------------------------------------------------------------------------------------------
 
 // deprecate
@@ -32,6 +29,47 @@ app.use(bodyParser.urlencoded({extended: false}));
 app.use(session({secret: 'ckdtnstlzmflt'}));
 app.use(expressValidator());
 
+
+
+//---------------------------------------------------------------------------------------------------------------------
+// http://nodeqa.com/nodejs_ref/83
+// http://bcho.tistory.com/938
+var facebookConfig = require('./config/facebook');
+passport.use(new FacebookStrategy(facebookConfig,
+  function(accessToken, refreshToken, profile, done) {
+    /*User.findOrCreate(..., function(err, user) {
+      if (err) { return done(err); }
+      done(null, user);
+    });
+*/
+        console.log(profile);
+        done(null,profile);
+  }
+));
+
+// serialize
+// 인증후 사용자 정보를 세션에 저장
+passport.serializeUser(function(user, done) {
+    console.log('serialize');
+    done(null, user);
+});
+ 
+ 
+// deserialize
+// 인증후, 사용자 정보를 세션에서 읽어서 request.user에 저장
+passport.deserializeUser(function(user, done) {
+    //findById(id, function (err, user) {
+    console.log('deserialize');
+    done(null, user);
+    //});
+});
+
+app.use(passport.initialize());
+app.use(passport.session());
+app.get('/auth/facebook', passport.authenticate('facebook'));
+app.get('/auth/facebook/callback',
+  passport.authenticate('facebook', { successRedirect: '/haha',
+                                      failureRedirect: '/login' }));
 
 
 //---------------------------------------------------------------------------------------------------------------------
