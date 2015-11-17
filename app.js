@@ -4,7 +4,9 @@ var mysql	= require('mysql');
 var expressValidator = require('express-validator');
 var bodyParser = require('body-parser');
 var passport = require('passport')
-  , FacebookStrategy = require('passport-facebook').Strategy;
+  , FacebookStrategy = require('passport-facebook').Strategy
+   , LocalStrategy = require('passport-local').Strategy;
+
 //---------------------------------------------------------------------------------------------------------------------
 /*eslint-disable no-console */
 
@@ -31,6 +33,52 @@ app.use(expressValidator());
 
 
 
+app.use(passport.initialize());
+app.use(passport.session());
+
+
+//---------------------------------------------------------------------------------------------------------------------
+passport.use(new LocalStrategy({
+//        usernameField : 'username',
+//        passwordField : 'password',
+        passReqToCallback : true
+}, function(req, username, password, done) {
+	pool.getConnection(function (err, conn) {
+		if (err) {console.error('err : ' + err);}
+
+		conn.query('select user_no from user where user_name = ? and password = ?',[username, password], function(err, rows) {
+			if (err) console.error('err : ' + err);
+			console.log('rows : ' + JSON.stringify(rows));
+
+			conn.release();
+
+			if (rows.length === 0) {
+				return done(null, false);
+				return;
+			}
+
+			var user = {"user_no": rows[0].user_no};
+			return done(null, user);
+		});
+	});
+}));
+
+
+app.get('/auth/local', passport.authenticate('local',  { successRedirect: '/login_success',
+                                      failureRedirect: '/login_fail' }));
+
+app.get('/login_success', ensureAuthenticated, function(req, res){
+    res.send(req.user);
+   // res.render('users', { user: req.user });
+});
+
+function ensureAuthenticated(req, res, next) {
+    // 로그인이 되어 있으면, 다음 파이프라인으로 진행
+    if (req.isAuthenticated()) { return next(); }
+    // 로그인이 안되어 있으면, login 페이지로 진행
+	res.send({result: false, auth:false});
+}
+
 //---------------------------------------------------------------------------------------------------------------------
 // http://nodeqa.com/nodejs_ref/83
 // http://bcho.tistory.com/938
@@ -42,6 +90,8 @@ passport.use(new FacebookStrategy(facebookConfig,
       done(null, user);
     });
 */
+		console.log("accessToken : ", accessToken);
+		console.log("refreshToken: ", refreshToken);
         console.log(profile);
         done(null,profile);
   }
@@ -51,6 +101,7 @@ passport.use(new FacebookStrategy(facebookConfig,
 // 인증후 사용자 정보를 세션에 저장
 passport.serializeUser(function(user, done) {
     console.log('serialize');
+    // 여기서 user_no만 세션에 넣는다
     done(null, user);
 });
  
@@ -60,16 +111,16 @@ passport.serializeUser(function(user, done) {
 passport.deserializeUser(function(user, done) {
     //findById(id, function (err, user) {
     console.log('deserialize');
+    // user_no를 이용해서 db에서 user 데이터를 갖고 온다.
     done(null, user);
     //});
 });
 
-app.use(passport.initialize());
-app.use(passport.session());
+
 app.get('/auth/facebook', passport.authenticate('facebook'));
 app.get('/auth/facebook/callback',
-  passport.authenticate('facebook', { successRedirect: '/haha',
-                                      failureRedirect: '/login' }));
+  passport.authenticate('facebook', { successRedirect: '/login_success',
+                                      failureRedirect: '/login_fail' }));
 
 
 //---------------------------------------------------------------------------------------------------------------------
