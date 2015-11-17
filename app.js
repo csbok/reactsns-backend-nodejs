@@ -24,6 +24,7 @@ var pool = mysql.createPool(mysqlConfig);
 
 
 app.use(function(req, res, next) {
+	res.header('Access-Control-Allow-Methods: GET, POST, PUT');
 	res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
 	res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
 	res.header('Access-Control-Allow-Credentials', 'true');
@@ -54,24 +55,29 @@ passport.use(new LocalStrategy({
 			console.log('rows : ' + JSON.stringify(rows));
 
 			conn.release();
-
+ 
 			if (rows.length === 0) {
 				return done(null, false);
 				return;
 			}
 
-			var user = {"user_no": rows[0].user_no};
+			var user = {"display_name":username, "user_no": rows[0].user_no};
 			return done(null, user);
 		});
 	});
 }));
 
+app.post('/auth/local', passport.authenticate('local'), function(req, res) {
+	res.send({result: true, user: req.user});
+});
 
+/*
 app.get('/auth/local', passport.authenticate('local',  { successRedirect: '/login_success',
                                       failureRedirect: '/login_fail' }));
-
+*/
 app.get('/login_success', ensureAuthenticated, function(req, res){
-    res.send(req.user);
+	res.send({result: true, user: req.user});
+
    // res.render('users', { user: req.user });
 });
 
@@ -88,9 +94,54 @@ function ensureAuthenticated(req, res, next) {
 var googleConfig = require('./config/google');
 passport.use(new GoogleStrategy(googleConfig,
   function(request, accessToken, refreshToken, profile, done) {
+	pool.getConnection(function (err, conn) {
+		if (err) {console.error('err : ' + err);}
+
+		conn.query('select user_no, display_name from user where provider = ? and id = ? limit 1',[profile.provider, profile.id], function(err, rows) {
+			if (err) console.error('err : ' + err);
+			console.log('rows : ' + JSON.stringify(rows));
+
+			if (rows.length === 0) {
+				conn.query('insert into user (provider, id, display_name, mail, photo) values (?,?,?,?,?)',[profile.provider, profile.id, profile.displayName, profile.email, profile.photos[0].value], function(err) {
+					if (err) console.error('err : ' + err);
+					console.log('rows : ' + JSON.stringify(rows));
+
+					conn.query('select user_no, display_name from user where provider = ? and id = ? limit 1',[profile.provider, profile.id], function(err, rows) {
+						if (err) console.error('err : ' + err);
+						console.log('rows : ' + JSON.stringify(rows));
+
+						conn.release();
+//						var user = {"user_no": rows[0].user_no};
+						return done(null, rows[0]);
+					});
+				});
+				return;
+			}
+
+			if (rows[0].displayName != profile.displayName || rows[0].mail != profile.email || rows[0].photo != profile.photos[0].value) {
+				conn.query('update user set display_name = ?, mail = ?, photo = ? where provider = ? and id = ?', [profile.displayName, profile.email, profile.photos[0].value, profile.provider, profile.id], function(err) {
+					if (err) console.error('err : ' + err);
+					console.log('rows : ' + JSON.stringify(rows));
+
+					conn.release();
+//					var user = {"user_no": rows[0].user_no};
+					return done(null, rows[0]);
+				});
+				return;
+			}
+
+			conn.release();
+
+//			var user = {"user_no": rows[0].user_no};
+			return done(null, rows[0]);
+		});
+	});  	
+
+  	/*
   	console.log("request : ", request);
   	console.log("accessToken : ",accessToken);
     done(null,profile);
+    */
   }
 ));
 
@@ -98,9 +149,15 @@ app.get('/auth/google', passport.authenticate('google', { scope:
     [ 'https://www.googleapis.com/auth/plus.login'
     , 'https://www.googleapis.com/auth/userinfo.profile'
     , 'https://www.googleapis.com/auth/plus.profile.emails.read' ] }));
+/*
 app.get('/auth/google/callback',
   passport.authenticate('google', { successRedirect: '/login_success',
                                       failureRedirect: '/login_fail' }));
+*/
+app.get('/auth/google/callback', passport.authenticate('google'), function(req, res) {
+//	res.send({result: true, user: req.user});
+	res.redirect("http://localhost:3000");
+});
 
 //---------------------------------------------------------------------------------------------------------------------
 var kakaoConfig = require('./config/kakao');
@@ -147,15 +204,58 @@ app.get('/auth/naver/callback',
 var facebookConfig = require('./config/facebook');
 passport.use(new FacebookStrategy(facebookConfig,
   function(accessToken, refreshToken, profile, done) {
+	pool.getConnection(function (err, conn) {
+		if (err) {console.error('err : ' + err);}
+
+		conn.query('select user_no, display_name from user where provider = ? and id = ? limit 1',[profile.provider, profile.id], function(err, rows) {
+			if (err) console.error('err : ' + err);
+			console.log('rows : ' + JSON.stringify(rows));
+
+			if (rows.length === 0) {
+				conn.query('insert into user (provider, id, display_name) values (?,?,?)',[profile.provider, profile.id, profile.displayName], function(err) {
+					if (err) console.error('err : ' + err);
+					console.log('rows : ' + JSON.stringify(rows));
+
+					conn.query('select user_no, display_name from user where provider = ? and id = ? limit 1',[profile.provider, profile.id], function(err, rows) {
+						if (err) console.error('err : ' + err);
+						console.log('rows : ' + JSON.stringify(rows));
+
+						conn.release();
+//						var user = {"user_no": rows[0].user_no};
+						return done(null, rows[0]);
+					});
+				});
+				return;
+			}
+
+			if (rows[0].displayName != profile.displayName) {
+				conn.query('update user set display_name = ? where provider = ? and id = ?', [profile.displayName, profile.provider, profile.id], function(err) {
+					if (err) console.error('err : ' + err);
+					console.log('rows : ' + JSON.stringify(rows));
+
+					conn.release();
+//					var user = {"user_no": rows[0].user_no};
+					return done(null, rows[0]);
+				});
+				return;
+			}
+
+			conn.release();
+
+//			var user = {"user_no": rows[0].user_no};
+			return done(null, rows[0]);
+		});
+	});  	
     /*User.findOrCreate(..., function(err, user) {
       if (err) { return done(err); }
       done(null, user);
     });
-*/
 		console.log("accessToken : ", accessToken);
 		console.log("refreshToken: ", refreshToken);
         console.log(profile);
         done(null,profile);
+*/
+
   }
 ));
 
@@ -180,10 +280,17 @@ passport.deserializeUser(function(user, done) {
 
 
 app.get('/auth/facebook', passport.authenticate('facebook'));
+
+/*
 app.get('/auth/facebook/callback',
   passport.authenticate('facebook', { successRedirect: '/login_success',
                                       failureRedirect: '/login_fail' }));
+*/
 
+app.get('/auth/facebook/callback', passport.authenticate('facebook'), function(req, res) {
+//	res.send({result: true, user: req.user});
+	res.redirect("http://localhost:3000");
+});
 
 //---------------------------------------------------------------------------------------------------------------------
 app.get('/info/:user_no', function(req,res) {
