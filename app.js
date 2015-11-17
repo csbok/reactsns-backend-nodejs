@@ -7,6 +7,7 @@ var passport = require('passport')
   , GoogleStrategy = require('passport-google-oauth2').Strategy
   , FacebookStrategy = require('passport-facebook').Strategy
   , NaverStrategy = require('passport-naver').Strategy
+  , KakaoStrategy = require('passport-kakao').Strategy
    , LocalStrategy = require('passport-local').Strategy;
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -99,6 +100,23 @@ app.get('/auth/google', passport.authenticate('google', { scope:
     , 'https://www.googleapis.com/auth/plus.profile.emails.read' ] }));
 app.get('/auth/google/callback',
   passport.authenticate('google', { successRedirect: '/login_success',
+                                      failureRedirect: '/login_fail' }));
+
+//---------------------------------------------------------------------------------------------------------------------
+var kakaoConfig = require('./config/kakao');
+passport.use(new KakaoStrategy(kakaoConfig,
+  function(accessToken, refreshToken, profile, done){
+	console.log("accessToken : ", accessToken);
+	console.log("refreshToken: ", refreshToken);
+    console.log(profile);
+    done(null,profile);
+  }
+));
+
+
+app.get('/auth/kakao', passport.authenticate('kakao'));
+app.get('/auth/kakao/callback',
+  passport.authenticate('kakao', { successRedirect: '/login_success',
                                       failureRedirect: '/login_fail' }));
 
 //---------------------------------------------------------------------------------------------------------------------

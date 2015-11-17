@@ -13,6 +13,7 @@
     "passport": "^0.3.2",
     "passport-facebook": "^2.0.0",
     "passport-google-oauth2": "^0.1.6",
+    "passport-kakao": "0.0.2",
     "passport-local": "^1.0.0",
     "passport-naver": "^1.0.4",
     "passport-twitter": "^1.0.3"
