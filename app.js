@@ -4,7 +4,9 @@ var mysql	= require('mysql');
 var expressValidator = require('express-validator');
 var bodyParser = require('body-parser');
 var passport = require('passport')
+  , GoogleStrategy = require('passport-google-oauth2').Strategy
   , FacebookStrategy = require('passport-facebook').Strategy
+  , NaverStrategy = require('passport-naver').Strategy
    , LocalStrategy = require('passport-local').Strategy;
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -78,6 +80,48 @@ function ensureAuthenticated(req, res, next) {
     // 로그인이 안되어 있으면, login 페이지로 진행
 	res.send({result: false, auth:false});
 }
+
+
+
+//---------------------------------------------------------------------------------------------------------------------
+var googleConfig = require('./config/google');
+passport.use(new GoogleStrategy(googleConfig,
+  function(request, accessToken, refreshToken, profile, done) {
+  	console.log("request : ", request);
+  	console.log("accessToken : ",accessToken);
+    done(null,profile);
+  }
+));
+
+app.get('/auth/google', passport.authenticate('google', { scope: 
+    [ 'https://www.googleapis.com/auth/plus.login'
+    , 'https://www.googleapis.com/auth/userinfo.profile'
+    , 'https://www.googleapis.com/auth/plus.profile.emails.read' ] }));
+app.get('/auth/google/callback',
+  passport.authenticate('google', { successRedirect: '/login_success',
+                                      failureRedirect: '/login_fail' }));
+
+//---------------------------------------------------------------------------------------------------------------------
+var naverConfig = require('./config/naver');
+passport.use(new NaverStrategy(naverConfig,
+  function(accessToken, refreshToken, profile, done) {
+    /*User.findOrCreate(..., function(err, user) {
+      if (err) { return done(err); }
+      done(null, user);
+    });
+*/
+		console.log("accessToken : ", accessToken);
+		console.log("refreshToken: ", refreshToken);
+        console.log(profile);
+        done(null,profile);
+  }
+));
+
+
+app.get('/auth/naver', passport.authenticate('naver'));
+app.get('/auth/naver/callback',
+  passport.authenticate('naver', { successRedirect: '/login_success',
+                                      failureRedirect: '/login_fail' }));
 
 //---------------------------------------------------------------------------------------------------------------------
 // http://nodeqa.com/nodejs_ref/83

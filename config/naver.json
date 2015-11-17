@@ -1,0 +1,5 @@
+{
+    "clientID": "Oh7CaJ7LN5H1wCWJ6kn2",
+    "clientSecret": "MXmSbiQQSt",
+    "callbackURL": "http://localhost:8088/auth/naver/callback"
+}
