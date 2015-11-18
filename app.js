@@ -237,7 +237,7 @@ var articleController = require('./controllers/article');
 app.post('/write', ensureAuthenticated, articleController.write);
 app.post('/timeline', articleController.timeline);
 app.get('/new', articleController.newArticle);
-
+app.get('/user/:user_no', articleController.userArticle);
 
 
 //---------------------------------------------------------------------------------------------------------------------
