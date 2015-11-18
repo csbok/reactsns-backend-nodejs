@@ -36,20 +36,21 @@ articleController.timeline = function(req, res) {
 
 		    var pending = rows.length;
 
-		 	rows.forEach(function (row) {
-		        connection.query('SELECT comment_no, comment.comment, user.user_no, user.display_name FROM comment,user WHERE comment.user_no = user.user_no AND article_no = ?',  row.article_no , function(err, comment){
+			async.each(rows, function(row, callback) {
+		        conn.query('SELECT comment_no, comment.comment, user.user_no, user.display_name FROM comment,user WHERE comment.user_no = user.user_no AND article_no = ?',  row.article_no , function(err, comment){
 		        	row.comment_list = comment;
-		            if( 0 === --pending ) {
-						connection.release();
-						res.send(rows);
-		            }
+		        	callback();
 		        });
-		 	});
+			}, function (err) {
+						conn.release();
+						res.send(rows);
+			});
 		});
 	});
 
 };
 
+var async = require('async');
 articleController.newArticle = function(req,res) {
 	var user = req.user;
 
@@ -61,34 +62,30 @@ articleController.newArticle = function(req,res) {
 				if (err) console.error('err : ' + err);
 				console.log('rows : ' + JSON.stringify(rows));
 
-			    var pending = rows.length;
- 
-			 	rows.forEach(function (row) {
+				async.each(rows, function(row, callback) {
 			        conn.query('SELECT comment_no, comment.comment, user.user_no, user.display_name FROM comment,user WHERE comment.user_no = user.user_no AND article_no = ?',  row.article_no , function(err, comment){
 			        	row.comment_list = comment;
-			            if( 0 === --pending ) {
+			        	callback();
+			        });
+				}, function (err) {
 							conn.release();
 							res.send(rows);
-			            }
-			        });
-			 	});
+				});
 
 			});
 		} else {
 			conn.query('select article_no, content, article.user_no, (select count(1) from good where good_article_no=article_no) as good_count, user_name as author from article, user where article.user_no = user.user_no ORDER BY article_no DESC', function(err, rows) {
 				if (err) console.error('err : ' + err);
 
-			    var pending = rows.length;
- 
-			 	rows.forEach(function (row) {
+				async.each(rows, function(row, callback) {
 			        conn.query('SELECT comment_no, comment.comment, user.user_no, user.display_name FROM comment,user WHERE comment.user_no = user.user_no AND article_no = ?',  row.article_no , function(err, comment){
 			        	row.comment_list = comment;
-			            if( 0 === --pending ) {
+			        	callback();
+			        });
+				}, function (err) {
 							conn.release();
 							res.send(rows);
-			            }
-			        });
-			 	});
+				});
 
 			});
 		}
