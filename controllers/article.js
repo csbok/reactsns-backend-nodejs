@@ -1,0 +1,76 @@
+var mysql = require('../database/mysql');
+
+var articleController = {};
+
+// 새로운 글을 등록한다.
+articleController.write =  function(req,res) {
+	var user_no = req.user.user_no;
+	var content = req.param('content');
+
+	mysql.pool.getConnection(function (err, connection) {
+		if (err) console.error('err : ' + err);
+
+		connection.query('INSERT INTO article (content, user_no) VALUES (?,?)', [content, user_no],function (err) {
+			if (err) console.error('err : ' + err);
+
+			connection.release();
+
+			res.send({result:true});
+		});
+	});
+
+};
+
+articleController.timeline = function(req, res) {
+	var myid = req.param('myid');
+
+	console.log(myid);
+
+	mysql.pool.getConnection(function (err, connection) {
+		if (err) console.error('err : ' + err);
+
+		// Use the connection
+		connection.query('SELECT *,(SELECT COUNT(1) FROM good WHERE good_article_no=article_no) as good,(select count(1) from follow where lover_user_no=? and leader_user_no=user_no) as follow from article', 'curtis',function (err, rows) {
+			if (err) console.error('err : ' + err);
+			console.log('rows : ' + JSON.stringify(rows));
+
+	//			res.render('index', {title: 'test', rows: rows});
+			connection.release();
+
+			res.send(rows);
+
+			// Don't use the connection here, it has been returned to the pool.
+		});
+	});
+
+};
+
+articleController.newArticle = function(req,res) {
+	var user = req.user;
+
+	mysql.pool.getConnection(function (err, conn) {
+		if (err) console.error('err : ' + err);
+
+		if (user && user.user_no) {
+			conn.query('select article_no, content, article.user_no, (select count(1) from follow where leader_user_no=user.user_no and lover_user_no=?) as follow_already, (select count(1) from good where good_article_no = article_no and good_user_no = ?) as good_already, (select count(1) from good where good_article_no=article_no) as good_count, user_name as author from article, user where article.user_no = user.user_no ORDER BY article_no DESC', [user.user_no, user.user_no], function(err, rows) {
+				if (err) console.error('err : ' + err);
+				console.log('rows : ' + JSON.stringify(rows));
+
+				conn.release();
+
+				res.send(rows);
+			});
+		} else {
+			conn.query('select article_no, content, article.user_no, (select count(1) from good where good_article_no=article_no) as good_count, user_name as author from article, user where article.user_no = user.user_no ORDER BY article_no DESC', function(err, rows) {
+				if (err) console.error('err : ' + err);
+				console.log('rows : ' + JSON.stringify(rows));
+
+				conn.release();
+
+				res.send(rows);
+			});
+		}
+	});
+};
+
+module.exports = articleController;
