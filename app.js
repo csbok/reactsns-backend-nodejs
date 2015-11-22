@@ -235,7 +235,7 @@ app.post('/comment/:article_no', ensureAuthenticated, commentController.write);
 //---------------------------------------------------------------------------------------------------------------------
 var articleController = require('./controllers/article');
 app.post('/write', ensureAuthenticated, articleController.write);
-app.post('/timeline', articleController.timeline);
+app.get('/timeline/:myid', articleController.timeline);
 app.get('/new', articleController.newArticle);
 app.get('/user/:user_no', articleController.userArticle);
 
@@ -248,7 +248,7 @@ app.get('/follower/:user_no', followController.followerInfo);
 app.get('/following/:user_no', followController.followingInfo);
 
 //---------------------------------------------------------------------------------------------------------------------
-var server = app.listen(8088, function () {
+var server = app.listen(80, function () {
 	var host = server.address().address;
 	var port = server.address().port;
 
