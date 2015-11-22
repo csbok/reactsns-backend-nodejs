@@ -27,11 +27,11 @@ articleController.timeline = function(req, res) {
 
 	console.log(myid);
 
-	mysql.pool.getConnection(function (err, connection) {
+	mysql.pool.getConnection(function (err, conn) {
 		if (err) console.error('err : ' + err);
 
 		// Use the connection
-		connection.query('SELECT *,(SELECT COUNT(1) FROM good WHERE good_article_no=article_no) as good,(select count(1) from follow where lover_user_no=? and leader_user_no=user_no) as follow from article', 'curtis',function (err, rows) {
+		conn.query('SELECT *,(SELECT COUNT(1) FROM good WHERE good_article_no=article_no) as good,(select count(1) from follow where lover_user_no=? and leader_user_no=user_no) as follow from article, follow where article.user_no = follow.leader_user_no and follow.lover_user_no = ?', [myid, myid],function (err, rows) {
 			if (err) console.error('err : ' + err);
 			console.log('rows : ' + JSON.stringify(rows));
 
