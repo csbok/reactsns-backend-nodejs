@@ -38,11 +38,22 @@ followController.follow = function(req, res) {
 // 팔로워(나를 따르는 사람)의 목록을 구함
 followController.followerInfo = function(req,res) {
 	var user_no = req.params.user_no;
+	var user = req.user;
+
+	var query = '';
+	var query_param = [];
+	if (user && user.user_no) {
+		query = 'select user_no, user_name, (select count(1) from follow where leader_user_no=user.user_no and lover_user_no=?) as follow_already from user, follow where user.user_no = follow.lover_user_no and follow.leader_user_no=?';
+		query_param = [user.user_no,user_no];
+	} else {
+		query = 'select user_no, user_name from user, follow where user.user_no = follow.lover_user_no and follow.leader_user_no=?';
+		query_param = user_no;
+	}
 
 	mysql.pool.getConnection(function (err, conn) {
 		if (err) console.error('err : ' + err);
 
-		conn.query('select user_no, user_name from user, follow where user.user_no = follow.lover_user_no and follow.leader_user_no=?', user_no, function(err,rows) {
+		conn.query(query, query_param, function(err,rows) {
 			if (err) console.error('err : ' + err);
 
 			conn.release();
@@ -55,11 +66,22 @@ followController.followerInfo = function(req,res) {
 // 팔로잉(내가 따르는 사람)의 목록을 구함
 followController.followingInfo = function(req,res) {
 	var user_no = req.params.user_no;
+	var user = req.user;
+
+	var query = '';
+	var query_param = [];
+	if (user && user.user_no) {	
+		query = 'select user_no, user_name, (select count(1) from follow where leader_user_no=user.user_no and lover_user_no=?) as follow_already from user, follow where user.user_no = follow.leader_user_no and follow.lover_user_no=?';
+		query_param = [user.user_no, user_no];
+	} else {
+		query = 'select user_no, user_name from user, follow where user.user_no = follow.leader_user_no and follow.lover_user_no=?';
+		query_param = user_no;
+	}
 
 	mysql.pool.getConnection(function (err, conn) {
 		if (err) console.error('err : ' + err);
 
-		conn.query('select user_no, user_name from user, follow where user.user_no = follow.leader_user_no and follow.lover_user_no=?', user_no, function(err,rows) {
+		conn.query(query, query_param, function(err,rows) {
 			if (err) console.error('err : ' + err);
 
 			conn.release();
