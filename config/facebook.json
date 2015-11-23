@@ -1,5 +1,5 @@
 {
     "clientID": "468142546703538",
     "clientSecret": "83b3132daeff1603309dee6fcd26975c",
-    "callbackURL": "http://localhost:8088/auth/facebook/callback"
+    "callbackURL": "http://reactsns.herokuapp.com/auth/facebook/callback"
 }

@@ -1,6 +1,6 @@
 {
     "clientID": "71589121519-bsc9og5gco30lj80e5tbg335f28h5evq.apps.googleusercontent.com",
     "clientSecret": "kOUWwY491KQ3IKnAY-OFhdcu",
-    "callbackURL": "http://localhost:8088/auth/google/callback",
+    "callbackURL": "http://reactsns.herokuapp.com/auth/google/callback",
     "passReqToCallback": true
 }
