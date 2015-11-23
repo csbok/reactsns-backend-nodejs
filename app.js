@@ -84,7 +84,7 @@ app.get('/auth/google/callback',
 */
 app.get('/auth/google/callback', passport.authenticate('google'), function(req, res) {
 //	res.send({result: true, user: req.user});
-	res.redirect("http://localhost:3000");
+	res.redirect("http://reactsns.herokuapp.com");
 });
 
 
@@ -171,7 +171,7 @@ app.get('/auth/facebook/callback',
 
 app.get('/auth/facebook/callback', passport.authenticate('facebook'), function(req, res) {
 //	res.send({result: true, user: req.user});
-	res.redirect("http://localhost:3000");
+	res.redirect("http://reactsns.herokuapp.com");
 });
 
 
