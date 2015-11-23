@@ -123,7 +123,7 @@ articleController.userArticle = function(req, res) {
 		if (err) console.error('err : ' + err);
 
 		if (user && user.user_no) {
-			conn.query('select article_no, content, article.user_no, (select count(1) from follow where leader_user_no=user.user_no and lover_user_no=?) as follow_already, (select count(1) from good where good_article_no = article_no and good_user_no = ?) as good_already, (select count(1) from good where good_article_no=article_no) as good_count, user_name as author from article, user where article.user_no = ? ORDER BY article_no DESC', [user.user_no, user.user_no, user_no], function(err, rows) {
+			conn.query('select article_no, content, article.user_no, (select count(1) from follow where leader_user_no=user.user_no and lover_user_no=?) as follow_already, (select count(1) from good where good_article_no = article_no and good_user_no = ?) as good_already, (select count(1) from good where good_article_no=article_no) as good_count, user_name as author from article, user WHERE user.user_no = article.user_no AND article.user_no = ? ORDER BY article_no DESC', [user.user_no, user.user_no, user_no], function(err, rows) {
 				if (err) console.error('err : ' + err);
 				console.log('rows : ' + JSON.stringify(rows));
 
@@ -139,7 +139,7 @@ articleController.userArticle = function(req, res) {
 
 			});
 		} else {
-			conn.query('select article_no, content, article.user_no, (select count(1) from good where good_article_no=article_no) as good_count, user_name as author from article, user where article.user_no = ? ORDER BY article_no DESC', user_no, function(err, rows) {
+			conn.query('select article_no, content, article.user_no, (select count(1) from good where good_article_no=article_no) as good_count, user_name as author from article, user where user.user_no = article.user_no AND article.user_no = ? ORDER BY article_no DESC', user_no, function(err, rows) {
 				if (err) console.error('err : ' + err);
 
 				async.each(rows, function(row, callback) {
