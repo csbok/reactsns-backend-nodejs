@@ -16,6 +16,7 @@ var mysql = require('./database/mysql');
 
 var app = express();
 
+app.use(express.static('public'));
 // deprecate
 //app.use(app.router);
 
