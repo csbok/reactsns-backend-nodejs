@@ -1,5 +1,22 @@
 //---------------------------------------------------------------------------------------------------------------------
 /*eslint-disable no-console */
+var cluster = require('cluster');
+//---------------------------------------------------------------------------------------------------------------------
+
+if (cluster.isMaster) {
+  var os = require('os');
+  var cpuCount = os.cpus().length;
+  for (var cpu = 0; cpu < cpuCount; cpu++) {
+     cluster.fork();
+  }
+  
+  //cluster.on('death', function(worker) {
+  cluster.on('exit', function (worker) {
+    console.log('worker' + worker.pid + ' died');
+    cluster.fork();
+  }); 
+} else {
+
 var express	= require('express');
 var session = require('express-session');
 var expressValidator = require('express-validator');
@@ -9,10 +26,7 @@ var passport = require('passport')
   , FacebookStrategy = require('passport-facebook').Strategy
   , NaverStrategy = require('passport-naver').Strategy
   , KakaoStrategy = require('passport-kakao').Strategy
-   , LocalStrategy = require('passport-local').Strategy;
-
-var mysql = require('./database/mysql');
-//---------------------------------------------------------------------------------------------------------------------
+  , LocalStrategy = require('passport-local').Strategy;
 
 var app = express();
 
@@ -256,3 +270,4 @@ var server = app.listen(process.env.PORT || 5000, function () {
 	console.log('Example app listening at http://%s:%s', host, port);
 });
 
+}
