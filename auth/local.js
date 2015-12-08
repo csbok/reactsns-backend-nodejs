@@ -1,11 +1,16 @@
 var mysql = require('../database/mysql');
+var crypto = require('crypto');
 
 var localAuth = {};
 localAuth.login = function(req, username, password, done) {
 	mysql.pool.getConnection(function (err, conn) {
 		if (err) {console.error('err : ' + err);}
-
-		conn.query('select user_no from user where user_name = ? and password = ?',[username, password], function(err, rows) {
+		
+		var shasum = crypto.createHash('sha1');
+		shasum.update(password);
+		var pw_enc = shasum.digest('hex');
+		
+		conn.query('select user_no from user where user_name = ? and password = ?',[username, pw_enc], function(err, rows) {
 			if (err) console.error('err : ' + err);
 			console.log('rows : ' + JSON.stringify(rows));
 

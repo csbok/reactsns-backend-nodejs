@@ -1,4 +1,5 @@
 var mysql = require('../database/mysql');
+var crypto = require('crypto');
 
 var userController = {};
 
@@ -47,8 +48,12 @@ userController.join = function(req, res) {
 					res.send({result:false,message:'중복되는 이메일이 있습니다.'});
 					return;
 				}
+				
+				var shasum = crypto.createHash('sha1');
+				shasum.update(pw);
+				var pw_enc = shasum.digest('hex');
 
-				conn.query('INSERT INTO user (user_name, password, mail) VALUES (?,?,?)',[id, pw, mail], function(err) {
+				conn.query('INSERT INTO user (user_name, password, mail) VALUES (?,?,?)',[id, pw_enc, mail], function(err) {
 					if (err) console.error('err : ' + err);
 					conn.release();
 
