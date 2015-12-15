@@ -10,7 +10,7 @@ localAuth.login = function(req, username, password, done) {
 		shasum.update(password);
 		var pw_enc = shasum.digest('hex');
 		
-		conn.query('select user_no from user where user_name = ? and password = ?',[username, pw_enc], function(err, rows) {
+		conn.query('select user_no from user where id = ? and password = ?',[username, pw_enc], function(err, rows) {
 			if (err) console.error('err : ' + err);
 			console.log('rows : ' + JSON.stringify(rows));
 

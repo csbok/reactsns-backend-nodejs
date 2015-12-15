@@ -43,10 +43,10 @@ followController.followerInfo = function(req,res) {
 	var query = '';
 	var query_param = [];
 	if (user && user.user_no) {
-		query = 'select user_no, user_name, (select count(1) from follow where leader_user_no=user.user_no and lover_user_no=?) as follow_already from user, follow where user.user_no = follow.lover_user_no and follow.leader_user_no=?';
+		query = 'select user_no, display_name, (select count(1) from follow where leader_user_no=user.user_no and lover_user_no=?) as follow_already from user, follow where user.user_no = follow.lover_user_no and follow.leader_user_no=?';
 		query_param = [user.user_no,user_no];
 	} else {
-		query = 'select user_no, user_name from user, follow where user.user_no = follow.lover_user_no and follow.leader_user_no=?';
+		query = 'select user_no, display_name from user, follow where user.user_no = follow.lover_user_no and follow.leader_user_no=?';
 		query_param = user_no;
 	}
 
@@ -71,10 +71,10 @@ followController.followingInfo = function(req,res) {
 	var query = '';
 	var query_param = [];
 	if (user && user.user_no) {	
-		query = 'select user_no, user_name, (select count(1) from follow where leader_user_no=user.user_no and lover_user_no=?) as follow_already from user, follow where user.user_no = follow.leader_user_no and follow.lover_user_no=?';
+		query = 'select user_no, display_name, (select count(1) from follow where leader_user_no=user.user_no and lover_user_no=?) as follow_already from user, follow where user.user_no = follow.leader_user_no and follow.lover_user_no=?';
 		query_param = [user.user_no, user_no];
 	} else {
-		query = 'select user_no, user_name from user, follow where user.user_no = follow.leader_user_no and follow.lover_user_no=?';
+		query = 'select user_no, display_name from user, follow where user.user_no = follow.leader_user_no and follow.lover_user_no=?';
 		query_param = user_no;
 	}
 

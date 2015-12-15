@@ -8,7 +8,7 @@ commentController.get = function(req, res) {
 	mysql.pool.getConnection(function (err, conn) {
 		if (err) console.error('err : ' + err);
 
-		conn.query('select comment_no, comment, user_name from comment, user where article_no = ?', article_no, function(err, rows) {
+		conn.query('select comment_no, comment, display_name from comment, user where article_no = ?', article_no, function(err, rows) {
 			if (err) console.error('err : ' + err);
 			console.log('rows : ' + JSON.stringify(rows));
 

@@ -27,7 +27,7 @@ userController.join = function(req, res) {
 	mysql.pool.getConnection(function (err, conn) {
 		if (err) console.error('err : ' + err);
 
-		conn.query('select user_no from user where user_name = ?', id, function(err, rows) {
+		conn.query('select user_no from user where id = ?', id, function(err, rows) {
 			if (err) console.error('err : ' + err);
 			console.log('rows : ' + JSON.stringify(rows));
 
@@ -53,7 +53,7 @@ userController.join = function(req, res) {
 				shasum.update(pw);
 				var pw_enc = shasum.digest('hex');
 
-				conn.query('INSERT INTO user (user_name, password, mail) VALUES (?,?,?)',[id, pw_enc, mail], function(err) {
+				conn.query('INSERT INTO user (id, display_name, password, mail) VALUES (?,?,?,?)',[id, id, pw_enc, mail], function(err) {
 					if (err) console.error('err : ' + err);
 					conn.release();
 
@@ -70,7 +70,7 @@ userController.userInfo = function(req,res) {
 	mysql.pool.getConnection(function (err, conn) {
 		if (err) {console.error('err : ' + err);}
 
-		conn.query('select user_no, user_name,'+
+		conn.query('select user_no, display_name,'+
 			' (select count(1) from article where user_no=user.user_no) as article_count,'+
 			' (select count(1) from comment where user_no=user.user_no) as comment_count,'+
 			' (select count(1) from follow where lover_user_no=user_no) as following_count,'+
