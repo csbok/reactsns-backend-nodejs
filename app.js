@@ -60,7 +60,10 @@ passport.use(new LocalStrategy({
 }, localAuth.login));
 
 app.post('/auth/local', passport.authenticate('local'), function(req, res) {
-	res.send({result: true, user: req.user});
+    // 모바일 인증를 위해 필요한 문장 
+    req.session.isAuthenticated = true;
+	
+    res.send({result: true, user: req.user});
 });
 
 /*
@@ -76,6 +79,10 @@ app.get('/login_success', ensureAuthenticated, function(req, res){
 function ensureAuthenticated(req, res, next) {
     // 로그인이 되어 있으면, 다음 파이프라인으로 진행
     if (req.isAuthenticated()) { return next(); }
+    
+    // 모바일 인증를 위해 필요한 문장 
+    if (req.session.isAuthenticated) { return next(); }
+
     // 로그인이 안되어 있으면, login 페이지로 진행
 	res.send({result: false, auth:false});
 }
