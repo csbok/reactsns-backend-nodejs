@@ -17,6 +17,7 @@ if (cluster.isMaster) {
   }); 
 } else {
 
+var cors = require('cors');
 var express	= require('express');
 var session = require('express-session');
 var expressValidator = require('express-validator');
@@ -29,11 +30,12 @@ var passport = require('passport')
   , LocalStrategy = require('passport-local').Strategy;
 
 var app = express();
+app.use(cors({credentials: true, origin: true}));
 
 app.use(express.static('public'));
 // deprecate
 //app.use(app.router);
-
+/* cors 패키지로 대체됨
 app.use(function(req, res, next) {
 	res.header('Access-Control-Allow-Methods: GET, POST, PUT');
 	res.header('Access-Control-Allow-Origin', '*');
@@ -41,6 +43,7 @@ app.use(function(req, res, next) {
 	res.header('Access-Control-Allow-Credentials', 'true');
 	next();
 });
+*/
 app.use(bodyParser.urlencoded({extended: false}));
 
 app.use(session({secret: 'ckdtnstlzmflt'}));
@@ -60,10 +63,7 @@ passport.use(new LocalStrategy({
 }, localAuth.login));
 
 app.post('/auth/local', passport.authenticate('local'), function(req, res) {
-    // 모바일 인증를 위해 필요한 문장 
-    req.session.isAuthenticated = true;
-	
-    res.send({result: true, user: req.user});
+	res.send({result: true, user: req.user});
 });
 
 /*
@@ -79,10 +79,6 @@ app.get('/login_success', ensureAuthenticated, function(req, res){
 function ensureAuthenticated(req, res, next) {
     // 로그인이 되어 있으면, 다음 파이프라인으로 진행
     if (req.isAuthenticated()) { return next(); }
-    
-    // 모바일 인증를 위해 필요한 문장 
-    if (req.session.isAuthenticated) { return next(); }
-
     // 로그인이 안되어 있으면, login 페이지로 진행
 	res.send({result: false, auth:false});
 }
