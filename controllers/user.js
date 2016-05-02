@@ -1,7 +1,36 @@
 var mysql = require('../database/mysql');
 var crypto = require('crypto');
+var node_uuid = require('node-uuid');
 
 var userController = {};
+
+userController.join_uuid = function(req, res) {
+	var displayName = req.param('display_name');
+
+	var uuid = node_uuid.v4();
+
+	mysql.pool.getConnection(function (err, conn) {
+		if (err) console.error('err : ' + err);
+
+		conn.query('select user_no from user where uuid = ?', uuid, function(err, rows) {
+			if (err) console.error('err : ' + err);
+
+			if (rows.length > 1) {
+				conn.release();
+
+				res.send({result:false,message:'UUID가 중복입니다. 다시한번 시도해주세요.'});
+				return;
+			}
+			
+			conn.query('INSERT INTO user (uuid, display_name) VALUES (?,?)', [uuid, displayName], function(err) {
+				if (err) console.error('err : ' + err);
+				conn.release();
+				
+				res.send({result:true});
+			});		
+		});
+	});
+};
 
 userController.join = function(req, res) {
 	req.assert('id', '아이디는 필수입니다.').notEmpty();
@@ -10,10 +39,10 @@ userController.join = function(req, res) {
 	req.assert('pw', '비밀번호는 필수입니다. ').notEmpty();
 	req.assert('pw', '비밀번호는 4글자 이상 입력해주세요.').len(4,255);
 
-	req.assert('mail', 'A valid email is required').isEmail();
+	req.assert('mail', '이메일 주소를 다시한번 확인해주세요.').isEmail();
 //  req.checkBody('leader_email', 'Enter a valid email address.').isEmail();
 
-	var errors = req.validationErrors();  
+	var errors = req.validationErrors();
 	if (errors) {
 		res.send(JSON.stringify(errors));
 		console.log(JSON.stringify(errors));
@@ -48,8 +77,8 @@ userController.join = function(req, res) {
 					res.send({result:false,message:'중복되는 이메일이 있습니다.'});
 					return;
 				}
-				
-				var shasum = crypto.createHash('sha1');
+
+				var shasum = crypto.createHash('sha256');
 				shasum.update(pw);
 				var pw_enc = shasum.digest('hex');
 

@@ -1,5 +1,6 @@
 //---------------------------------------------------------------------------------------------------------------------
 /*eslint-disable no-console */
+/*
 var cluster = require('cluster');
 //---------------------------------------------------------------------------------------------------------------------
 
@@ -9,14 +10,14 @@ if (cluster.isMaster) {
   for (var cpu = 0; cpu < cpuCount; cpu++) {
      cluster.fork();
   }
-  
+
   //cluster.on('death', function(worker) {
   cluster.on('exit', function (worker) {
     console.log('worker' + worker.pid + ' died');
     cluster.fork();
-  }); 
+  });
 } else {
-
+*/
 var cors = require('cors');
 var express	= require('express');
 var session = require('express-session');
@@ -45,9 +46,13 @@ app.use(function(req, res, next) {
 });
 */
 app.use(bodyParser.urlencoded({extended: false}));
-
-app.use(session({secret: 'ckdtnstlzmflt'}));
 app.use(expressValidator());
+
+app.use(session({
+  secret: 'ckdtnstlzmflt',
+  saveUninitialized: true,
+  resave: true
+}));
 
 
 app.use(passport.initialize());
@@ -90,7 +95,7 @@ var googleAuth = require('./auth/google');
 var googleConfig = require('./config/google');
 passport.use(new GoogleStrategy(googleConfig, googleAuth.login));
 
-app.get('/auth/google', passport.authenticate('google', { scope: 
+app.get('/auth/google', passport.authenticate('google', { scope:
     [ 'https://www.googleapis.com/auth/plus.login'
     , 'https://www.googleapis.com/auth/userinfo.profile'
     , 'https://www.googleapis.com/auth/plus.profile.emails.read' ] }));
@@ -165,8 +170,8 @@ passport.serializeUser(function(user, done) {
     // 여기서 user_no만 세션에 넣는다
     done(null, user);
 });
- 
- 
+
+
 // deserialize
 // 인증후, 사용자 정보를 세션에서 읽어서 request.user에 저장
 passport.deserializeUser(function(user, done) {
@@ -234,7 +239,7 @@ app.get('/logout', function(req, res) {
 var userController = require('./controllers/user');
 app.post('/join', userController.join);
 app.get('/info/:user_no', userController.userInfo);
-
+app.post('/join_uuid', userController.join_uuid);
 
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -272,5 +277,6 @@ var server = app.listen(process.env.PORT || 5000, function () {
 
 	console.log('Example app listening at http://%s:%s', host, port);
 });
-
+/*
 }
+*/
